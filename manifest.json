@@ -1,0 +1,52 @@
+{
+    "manifest_version": 3,
+    "name": "SipWell",
+    "version": "1.2.0",
+    "description": "Hydration Tracker and Wellness Custom Reminder system for a healthier daily routine",
+    "author": "Idhayam AI",
+    "homepage_url": "https://Idhayam.ai",
+    "icons": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    },
+    "action": {
+      "default_popup": "popup.html",
+      "default_icon": {
+        "16": "images/icon16.png",
+        "48": "images/icon48.png",
+        "128": "images/icon128.png"
+      }
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
+    "permissions": [
+      "storage",
+      "notifications",
+      "alarms"
+    ],
+    "web_accessible_resources": [{
+      "resources": [
+        "chart.min.js"
+      ],
+      "matches": ["<all_urls>"]
+    }],
+    "commands": {
+      "quick-water": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+W",
+          "mac": "Command+Shift+W"
+        },
+        "description": "Quick add water"
+      },
+      "quick-coffee": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+C",
+          "mac": "Command+Shift+C"
+        },
+        "description": "Quick add coffee"
+      }
+    }
+  }
+  
