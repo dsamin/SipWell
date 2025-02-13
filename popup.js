@@ -411,8 +411,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
               label: 'Daily Intake (ml)',
               data: getWeeklyData(),
-              backgroundColor: '#00ACC1',    // primary-color
-              borderColor: '#0097A7',        // secondary-color
+              backgroundColor: '#1E88E5',    // primary-color
+              borderColor: '#1565C0',        // secondary-color
               borderWidth: 1
             }]
           },

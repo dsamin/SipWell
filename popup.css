@@ -1,14 +1,14 @@
 /* Base Styles */
 :root {
-  --primary-color: #00ACC1;      /* Aqua blue */
-  --secondary-color: #0097A7;    /* Darker aqua */
-  --accent-color: #4DD0E1;       /* Light aqua */
+  --primary-color: #1E88E5;      /* Vibrant blue */
+  --secondary-color: #1565C0;    /* Darker blue */
+  --accent-color: #42A5F5;       /* Light vibrant blue */
   --success-color: #4CAF50;      /* Green */
   --text-primary: #2C3E50;
   --text-secondary: #607D8B;
   --background: #F0F7F9;        /* Light blue-grey */
-  --gradient-start: #E3F2FD;    /* Very light blue */
-  --gradient-end: #F5FBFF;      /* Almost white with blue tint */
+  --gradient-start: #E3F2FD;    /* Light blue background */
+  --gradient-end: #BBDEFB;      /* Slightly darker blue tint */
   --surface: #F5F7FA;
   --error: #FF5252;              /* Keep red for error states */
 }
