@@ -1,10 +1,21 @@
 {
     "manifest_version": 3,
-    "name": "SipWell",
+    "name": "SipWell: Water Tracker & Break Timer",
+    "short_name": "SipWell",
     "version": "1.2.0",
-    "description": "Hydration Tracker and Wellness Custom Reminder system for a healthier daily routine",
+    "description": "Stay healthy with smart hydration tracking and customizable break reminders. Monitor water intake, schedule wellness breaks, and maintain daily health goals.",
     "author": "Idhayam AI",
     "homepage_url": "https://Idhayam.ai",
+    "keywords": [
+      "wellness",
+      "hydration",
+      "break timer",
+      "water reminder",
+      "health tracker",
+      "productivity",
+      "work breaks",
+      "daily routine"
+    ],
     "icons": {
       "16": "images/icon16.png",
       "48": "images/icon48.png",
@@ -16,7 +27,8 @@
         "16": "images/icon16.png",
         "48": "images/icon48.png",
         "128": "images/icon128.png"
-      }
+      },
+      "default_title": "WellnessWatch"
     },
     "background": {
       "service_worker": "background.js"
