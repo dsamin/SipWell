@@ -619,4 +619,35 @@ nav,
 .unit-button:last-child {
   border-radius: 0 4px 4px 0;
 }
+
+/* Notification styles */
+.notification {
+  background-color: var(--error);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.notification-message {
+  font-weight: 500;
+}
+
+.notification-close {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.notification-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: none;
+}
   
