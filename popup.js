@@ -1,6 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Clear badge when popup opens
+    chrome.action.setBadgeText({ text: '' });
+  
     // ----- Settings & Beverage List Management -----
     const defaultBeverages = ["Water", "Coffee", "Soda"];
+  
+    // Add unit preference handling
+    let preferredUnit = localStorage.getItem('preferredUnit') || 'ml';
   
     // Retrieve or initialize beverage list from localStorage
     const getBeverages = () => {
@@ -39,8 +45,23 @@ document.addEventListener('DOMContentLoaded', function() {
       const beverages = getBeverages();
       beverages.forEach(beverage => {
         let li = document.createElement('li');
-        li.textContent = beverage;
+        li.innerHTML = `
+          <span>${beverage}</span>
+          ${beverage !== 'Water' ? `<button class="delete-beverage" data-beverage="${beverage}">×</button>` : ''}
+        `;
         beverageList.appendChild(li);
+      });
+
+      // Add delete event listeners
+      document.querySelectorAll('.delete-beverage').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const beverageToDelete = e.target.dataset.beverage;
+          let beverages = getBeverages();
+          beverages = beverages.filter(b => b !== beverageToDelete);
+          localStorage.setItem('beverages', JSON.stringify(beverages));
+          populateBeverageList();
+          populateBeverageDropdown();
+        });
       });
     }
   
@@ -206,48 +227,70 @@ document.addEventListener('DOMContentLoaded', function() {
         .reduce((total, entry) => total + parseInt(entry.amount), 0);
     }
 
-    function addDrinkToLog(beverage, amount, save) {
-      if (!beverage || !amount) return;
-      
-      const li = document.createElement('li');
-      const amountNum = parseInt(amount);
-      
-      // Create a delete button
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = '×';
-      deleteBtn.className = 'delete-drink';
-      deleteBtn.onclick = function() {
-        li.remove();
-        if (save) {
-          // Remove this entry from localStorage
-          const log = JSON.parse(localStorage.getItem('drinkLog') || '[]');
-          const index = log.findIndex(entry => 
-            entry.beverage === beverage && entry.amount === amount.toString()
-          );
-          if (index > -1) {
-            log.splice(index, 1);
-            localStorage.setItem('drinkLog', JSON.stringify(log));
-            totalIntake -= amountNum;
-            updateProgress();
-          }
-        }
-      };
-
-      // Add the drink info and delete button to the list item
-      li.innerHTML = `<span>${beverage}: ${amount} ml</span>`;
-      li.appendChild(deleteBtn);
-      drinkLogList.appendChild(li);
-
-      if (save) {
-        const log = JSON.parse(localStorage.getItem('drinkLog') || '[]');
-        log.push({ beverage, amount: amount.toString() });
-        localStorage.setItem('drinkLog', JSON.stringify(log));
-      }
+    // Conversion functions
+    function mlToOz(ml) {
+      return Math.round(ml * 0.033814);
     }
-  
+
+    function ozToMl(oz) {
+      return Math.round(oz * 29.5735);
+    }
+
+    // Unit toggle handlers
+    const toggleMl = document.getElementById('toggle-ml');
+    const toggleOz = document.getElementById('toggle-oz');
+    
+    function updateUnitDisplay() {
+      const dailyTargetLabel = document.querySelector('label[for="daily-target"]');
+      const drinkAmountLabel = document.querySelector('label[for="drink-amount"]');
+      const dailyTarget = document.getElementById('daily-target');
+      const drinkAmount = document.getElementById('drink-amount');
+      
+      const currentValue = parseInt(dailyTarget.value) || 2000;
+      
+      if (preferredUnit === 'oz') {
+        dailyTargetLabel.textContent = 'Daily Hydration Target (oz):';
+        drinkAmountLabel.textContent = 'Amount (oz):';
+        if (localStorage.getItem('preferredUnit') === 'ml') {
+          dailyTarget.value = mlToOz(currentValue);
+        }
+        drinkAmount.placeholder = '32 oz';
+        toggleOz.classList.add('active');
+        toggleMl.classList.remove('active');
+      } else {
+        dailyTargetLabel.textContent = 'Daily Hydration Target (ml):';
+        drinkAmountLabel.textContent = 'Amount (ml):';
+        if (localStorage.getItem('preferredUnit') === 'oz') {
+          dailyTarget.value = ozToMl(currentValue);
+        }
+        drinkAmount.placeholder = '1000 ml';
+        toggleMl.classList.add('active');
+        toggleOz.classList.remove('active');
+      }
+      localStorage.setItem('preferredUnit', preferredUnit);
+    }
+
+    toggleMl.addEventListener('click', () => {
+      if (preferredUnit === 'ml') return;
+      preferredUnit = 'ml';
+      updateUnitDisplay();
+      updateProgress();
+    });
+
+    toggleOz.addEventListener('click', () => {
+      if (preferredUnit === 'oz') return;
+      preferredUnit = 'oz';
+      updateUnitDisplay();
+      updateProgress();
+    });
+
     function updateProgress() {
       const target = getDailyTarget();
-      progressText.textContent = `${totalIntake} / ${target} ml`;
+      const displayTotal = preferredUnit === 'oz' ? mlToOz(totalIntake) : totalIntake;
+      const displayTarget = preferredUnit === 'oz' ? mlToOz(target) : target;
+      const unit = preferredUnit === 'oz' ? 'oz' : 'ml';
+      
+      progressText.textContent = `${displayTotal} / ${displayTarget} ${unit}`;
       let percentage = Math.min((totalIntake / target) * 100, 100);
       waterFill.style.height = `${percentage}%`;
       
@@ -268,10 +311,33 @@ document.addEventListener('DOMContentLoaded', function() {
       const waterStat = document.getElementById('water-stat');
       const coffeeStat = document.getElementById('coffee-stat');
       if (waterStat && coffeeStat) {
-        waterStat.textContent = `${getWaterIntake()} ml`;
-        coffeeStat.textContent = `${getCoffeeIntake()} ml`;
+        const waterAmount = preferredUnit === 'oz' ? mlToOz(getWaterIntake()) : getWaterIntake();
+        const coffeeAmount = preferredUnit === 'oz' ? mlToOz(getCoffeeIntake()) : getCoffeeIntake();
+        waterStat.textContent = `${waterAmount} ${unit}`;
+        coffeeStat.textContent = `${coffeeAmount} ${unit}`;
       }
     }
+
+    function addDrinkToLog(beverage, amount, save) {
+      if (!beverage || !amount) return;
+      
+      // Convert amount to ml for storage if needed
+      const amountInMl = preferredUnit === 'oz' ? ozToMl(parseInt(amount)) : parseInt(amount);
+      const displayAmount = preferredUnit === 'oz' ? amount : amountInMl;
+      const unit = preferredUnit === 'oz' ? 'oz' : 'ml';
+      
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${beverage}: ${displayAmount} ${unit}</span>`;
+      
+      if (save) {
+        const log = JSON.parse(localStorage.getItem('drinkLog') || '[]');
+        log.push({ beverage, amount: amountInMl.toString() }); // Always store in ml
+        localStorage.setItem('drinkLog', JSON.stringify(log));
+      }
+    }
+
+    // Initialize unit display on load
+    updateUnitDisplay();
   
     function showGoalCompletionMessage() {
       const modal = document.createElement('div');
@@ -280,15 +346,34 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="celebration-content">
           <h3>🎉 Daily Goal Reached! 🎉</h3>
           <p>Great job staying hydrated today!</p>
-          <button onclick="this.parentElement.parentElement.remove()">Close</button>
+          <button class="close-celebration">Close</button>
         </div>
       `;
+      
+      // Add event listener for close button
+      const closeButton = modal.querySelector('.close-celebration');
+      closeButton.addEventListener('click', () => {
+        modal.remove();
+      });
+      
       document.body.appendChild(modal);
     }
   
     // ----- Wellness Reminder -----
     const countdownElem = document.getElementById('countdown');
     let reminderInterval;
+  
+    // Check for active timer when popup opens
+    function checkActiveTimer() {
+      chrome.runtime.sendMessage({ action: 'checkTimer' }, (response) => {
+        if (response && response.active) {
+          startCountdown(response.remainingSeconds);
+        }
+      });
+    }
+  
+    // Call this function when the popup loads
+    checkActiveTimer();
   
     document.getElementById('set-reminder').addEventListener('click', () => {
       const timerMinutes = parseInt(document.getElementById('reminder-timer').value);
@@ -297,15 +382,23 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Please enter a valid timer in minutes.');
         return;
       }
+      
+      // Clear any existing alarms
+      chrome.alarms.clearAll();
+      
       // Send a message to the background script to set a reminder
       chrome.runtime.sendMessage({ 
         action: 'setReminder', 
         delay: timerMinutes,
         type: reminderType 
       }, (response) => {
-        console.log(response.status);
+        if (response && response.status) {
+          console.log(response.status);
+          // Update UI to show reminder is active
+          countdownElem.style.color = 'var(--primary-color)';
+          startCountdown(timerMinutes * 60); // Start countdown immediately
+        }
       });
-      startCountdown(timerMinutes * 60);
     });
   
     function startCountdown(seconds) {
@@ -315,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
         seconds--;
         if (seconds <= 0) {
           clearInterval(reminderInterval);
-          countdownElem.textContent = 'Reminder triggered!';
+          showTimerNotification();
         } else {
           updateCountdownDisplay(seconds);
         }
@@ -326,6 +419,30 @@ document.addEventListener('DOMContentLoaded', function() {
       const mins = Math.floor(seconds / 60);
       const secs = seconds % 60;
       countdownElem.textContent = `${mins}m ${secs}s remaining`;
+    }
+
+    function showTimerNotification() {
+      const reminderType = document.getElementById('reminder-type').value || 'Break';
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.innerHTML = `
+        <span class="notification-message">Time for your ${reminderType} break!</span>
+        <button class="notification-close">×</button>
+      `;
+      
+      // Add event listener for close button
+      const closeButton = notification.querySelector('.notification-close');
+      closeButton.addEventListener('click', () => {
+        notification.remove();
+      });
+      
+      // Insert at the top of the reminder section
+      const reminderSection = document.getElementById('reminder');
+      reminderSection.insertBefore(notification, reminderSection.firstChild);
+      
+      // Update countdown text
+      countdownElem.textContent = 'Timer completed';
+      countdownElem.style.color = 'var(--error)';
     }
 
     function initializeUI() {
@@ -411,8 +528,8 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
               label: 'Daily Intake (ml)',
               data: getWeeklyData(),
-              backgroundColor: '#00ACC1',    // primary-color
-              borderColor: '#0097A7',        // secondary-color
+              backgroundColor: '#1E88E5',    // primary-color
+              borderColor: '#1565C0',        // secondary-color
               borderWidth: 1
             }]
           },
@@ -526,5 +643,18 @@ document.addEventListener('DOMContentLoaded', function() {
       weeklyData[dayOfWeek] = totalIntake;
       localStorage.setItem('weeklyData', JSON.stringify(weeklyData));
     }
+
+    // Check for pending notifications
+    function checkPendingNotifications() {
+      chrome.storage.local.get(['hasNotification', 'reminderType'], (data) => {
+        if (data.hasNotification) {
+          showTimerNotification();
+          chrome.storage.local.remove('hasNotification');
+        }
+      });
+    }
+
+    // Call when popup opens
+    checkPendingNotifications();
   });
   

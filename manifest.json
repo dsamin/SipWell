@@ -19,15 +19,21 @@
       }
     },
     "background": {
-      "service_worker": "background.js"
+      "service_worker": "background.js",
+      "type": "module"
     },
     "permissions": [
-      "notifications",
-      "alarms"
+      "alarms",
+      "storage"
+    ],
+    "host_permissions": [
+      "http://*/*",
+      "https://*/*"
     ],
     "web_accessible_resources": [{
       "resources": [
-        "chart.min.js"
+        "chart.min.js",
+        "notification.mp3"
       ],
       "matches": ["<all_urls>"]
     }],
