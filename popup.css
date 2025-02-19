@@ -1,14 +1,14 @@
 /* Base Styles */
 :root {
-  --primary-color: #00ACC1;      /* Aqua blue */
-  --secondary-color: #0097A7;    /* Darker aqua */
-  --accent-color: #4DD0E1;       /* Light aqua */
+  --primary-color: #1E88E5;      /* Vibrant blue */
+  --secondary-color: #1565C0;    /* Darker blue */
+  --accent-color: #42A5F5;       /* Light vibrant blue */
   --success-color: #4CAF50;      /* Green */
   --text-primary: #2C3E50;
   --text-secondary: #607D8B;
   --background: #F0F7F9;        /* Light blue-grey */
-  --gradient-start: #E3F2FD;    /* Very light blue */
-  --gradient-end: #F5FBFF;      /* Almost white with blue tint */
+  --gradient-start: #E3F2FD;    /* Light blue background */
+  --gradient-end: #BBDEFB;      /* Slightly darker blue tint */
   --surface: #F5F7FA;
   --error: #FF5252;              /* Keep red for error states */
 }
@@ -371,10 +371,36 @@ label {
 }
 
 #beverage-list li {
-  background: #f1f1f1;
-  margin: 5px 0;
-  padding: 6px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  padding: 8px 12px;
+  margin: 4px 0;
   border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.delete-beverage {
+  background: transparent;
+  color: var(--error);
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-beverage:hover {
+  background: rgba(255, 82, 82, 0.1);
+  transform: scale(1.1);
+}
+
+/* Prevent deletion of Water */
+#beverage-list li:first-child .delete-beverage {
+  display: none;
 }
 
 /* Add styles for the stats section */
@@ -559,5 +585,38 @@ nav,
   text-align: center;
   margin: 20px 0;
   font-weight: 500;
+}
+
+/* Unit Toggle Styles */
+.unit-toggle {
+  margin-top: 12px;
+}
+
+.toggle-buttons {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.unit-button {
+  flex: 1;
+  background: var(--surface);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border: 1px solid var(--accent-color);
+  transition: all 0.2s ease;
+}
+
+.unit-button.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.unit-button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.unit-button:last-child {
+  border-radius: 0 4px 4px 0;
 }
   
