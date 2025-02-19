@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Clear badge when popup opens
+    chrome.action.setBadgeText({ text: '' });
+  
     // ----- Settings & Beverage List Management -----
     const defaultBeverages = ["Water", "Coffee", "Soda"];
   
@@ -343,15 +346,34 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="celebration-content">
           <h3>🎉 Daily Goal Reached! 🎉</h3>
           <p>Great job staying hydrated today!</p>
-          <button onclick="this.parentElement.parentElement.remove()">Close</button>
+          <button class="close-celebration">Close</button>
         </div>
       `;
+      
+      // Add event listener for close button
+      const closeButton = modal.querySelector('.close-celebration');
+      closeButton.addEventListener('click', () => {
+        modal.remove();
+      });
+      
       document.body.appendChild(modal);
     }
   
     // ----- Wellness Reminder -----
     const countdownElem = document.getElementById('countdown');
     let reminderInterval;
+  
+    // Check for active timer when popup opens
+    function checkActiveTimer() {
+      chrome.runtime.sendMessage({ action: 'checkTimer' }, (response) => {
+        if (response && response.active) {
+          startCountdown(response.remainingSeconds);
+        }
+      });
+    }
+  
+    // Call this function when the popup loads
+    checkActiveTimer();
   
     document.getElementById('set-reminder').addEventListener('click', () => {
       const timerMinutes = parseInt(document.getElementById('reminder-timer').value);
@@ -360,15 +382,23 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Please enter a valid timer in minutes.');
         return;
       }
+      
+      // Clear any existing alarms
+      chrome.alarms.clearAll();
+      
       // Send a message to the background script to set a reminder
       chrome.runtime.sendMessage({ 
         action: 'setReminder', 
         delay: timerMinutes,
         type: reminderType 
       }, (response) => {
-        console.log(response.status);
+        if (response && response.status) {
+          console.log(response.status);
+          // Update UI to show reminder is active
+          countdownElem.style.color = 'var(--primary-color)';
+          startCountdown(timerMinutes * 60); // Start countdown immediately
+        }
       });
-      startCountdown(timerMinutes * 60);
     });
   
     function startCountdown(seconds) {
@@ -378,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
         seconds--;
         if (seconds <= 0) {
           clearInterval(reminderInterval);
-          countdownElem.textContent = 'Reminder triggered!';
+          showTimerNotification();
         } else {
           updateCountdownDisplay(seconds);
         }
@@ -389,6 +419,30 @@ document.addEventListener('DOMContentLoaded', function() {
       const mins = Math.floor(seconds / 60);
       const secs = seconds % 60;
       countdownElem.textContent = `${mins}m ${secs}s remaining`;
+    }
+
+    function showTimerNotification() {
+      const reminderType = document.getElementById('reminder-type').value || 'Break';
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.innerHTML = `
+        <span class="notification-message">Time for your ${reminderType} break!</span>
+        <button class="notification-close">×</button>
+      `;
+      
+      // Add event listener for close button
+      const closeButton = notification.querySelector('.notification-close');
+      closeButton.addEventListener('click', () => {
+        notification.remove();
+      });
+      
+      // Insert at the top of the reminder section
+      const reminderSection = document.getElementById('reminder');
+      reminderSection.insertBefore(notification, reminderSection.firstChild);
+      
+      // Update countdown text
+      countdownElem.textContent = 'Timer completed';
+      countdownElem.style.color = 'var(--error)';
     }
 
     function initializeUI() {
@@ -589,5 +643,18 @@ document.addEventListener('DOMContentLoaded', function() {
       weeklyData[dayOfWeek] = totalIntake;
       localStorage.setItem('weeklyData', JSON.stringify(weeklyData));
     }
+
+    // Check for pending notifications
+    function checkPendingNotifications() {
+      chrome.storage.local.get(['hasNotification', 'reminderType'], (data) => {
+        if (data.hasNotification) {
+          showTimerNotification();
+          chrome.storage.local.remove('hasNotification');
+        }
+      });
+    }
+
+    // Call when popup opens
+    checkPendingNotifications();
   });
   
